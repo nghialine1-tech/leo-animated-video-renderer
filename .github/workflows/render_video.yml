@@ -1,0 +1,60 @@
+name: Render Leo Animated Video (60s Master)
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  render:
+    name: Cloud Render 60s Animated Video
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install System Dependencies (FFmpeg)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+
+      - name: Install Python Packages
+        run: |
+          pip install Pillow edge-tts
+
+      - name: Execute Video Rendering Pipeline
+        run: |
+          python render_v2_master.py
+
+      - name: Verify Rendered Video
+        run: |
+          ls -lh leo_sunny_day_60s_v2_master.mp4
+          ffprobe -v error -show_entries format=duration,size -of json leo_sunny_day_60s_v2_master.mp4
+
+      - name: Upload Video Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: leo_sunny_day_60s_v2_master
+          path: leo_sunny_day_60s_v2_master.mp4
+          retention-days: 14
+
+      - name: Send Video to Telegram (Optional)
+        if: env.TELEGRAM_BOT_TOKEN != ''
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID || '5057026434' }}
+        run: |
+          echo "Sending rendered video to Telegram..."
+          curl -F chat_id="$TELEGRAM_CHAT_ID" \
+               -F video=@leo_sunny_day_60s_v2_master.mp4 \
+               -F caption="🎬 Video hoạt hình Leo 60s (V2 Master) đã được render thành công trên GitHub Actions Cloud!" \
+               https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendVideo

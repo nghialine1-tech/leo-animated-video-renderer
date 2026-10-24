@@ -1,0 +1,9 @@
+# Generated videos and intermediate files
+clips/
+clips_v2/
+*.mp4
+concat_*.txt
+video_*_temp*.mp4
+__pycache__/
+*.pyc
+.DS_Store
